@@ -22,6 +22,7 @@ RUN install-php-extensions gmp soap intl
 RUN apt-get update && apt-get install -y libpq-dev \
     && docker-php-ext-configure pgsql -with-pgsql=/usr/local/pgsql \
     && docker-php-ext-install pdo pdo_pgsql pgsql
+RUN apt-get update && apt-get install -y default-mysql-client
 
 RUN groupadd dev -g 1000
 RUN useradd dev -g dev -d /home/dev -m
