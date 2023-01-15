@@ -1,0 +1,50 @@
+version: "3.3"
+services:
+
+  private_office_mariadb:
+    container_name: private_office_mariadb
+    restart: "no"
+    image: mariadb:10.6.0
+    working_dir: /opt/sqldump
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    ports:
+      - "10190:3306"
+    networks:
+      private_office_net:
+        aliases:
+          - private_office_mariadb
+
+  private_office_php:
+    user: dev:dev
+    container_name: private_office_php
+    build: ./docker_config/php
+    restart: "no"
+    volumes:
+      - ./app:/var/www/private_office
+      - ./docker_config/php/www2.conf:/usr/local/etc/php-fpm.d/www2.conf
+    working_dir: /var/www/private_office
+    ports:
+      - "10191:9000"
+    networks:
+      private_office_net:
+        aliases:
+          - private_office_php
+
+
+  private_office_nginx:
+    container_name: private_office_nginx
+    restart: "no"
+    image: nginx:stable-alpine
+    volumes:
+      - ./docker_config/nginx/mime.types:/etc/nginx/mime.types
+      - ./docker_config/nginx/default.conf:/etc/nginx/conf.d/default.conf
+    ports:
+      - "10192:80"
+    networks:
+      private_office_net:
+        aliases:
+          - private_office_nginx
+
+networks:
+  private_office_net:
