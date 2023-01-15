@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Exceptions\NegativeBalanceException;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -46,6 +47,10 @@ class Wallet extends Model
     {
         if ($amount) {
             $this->attributes['balance'] -= $amount;
+        }
+
+        if ($this->attributes['balance'] < 0) {
+           throw new NegativeBalanceException();
         }
 
         return $this;

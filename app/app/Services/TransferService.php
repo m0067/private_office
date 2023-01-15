@@ -11,10 +11,19 @@ use Illuminate\Support\Facades\DB;
 class TransferService
 {
     /**
-     * @param  User  $sender
-     * @param  User  $recipient
-     * @param  int  $amount
-     *
+     * @var CurrencyService
+     */
+    private $currencyService;
+
+    public function __construct(CurrencyService $currencyService)
+    {
+        $this->currencyService = $currencyService;
+    }
+
+    /**
+     * @param User $sender
+     * @param User $recipient
+     * @param int $amount
      * @return Transfer
      * @throws \Exception
      */
@@ -23,8 +32,19 @@ class TransferService
         DB::beginTransaction();
 
         try {
-            $sender->wallet->withdraw($amount)->save();
-            $recipient->wallet->deposit($amount)->save();
+            $senderWallet = DB::table('wallets')
+                ->where('user_id', $sender->id)
+                ->lockForUpdate()
+                ->first();
+            $recipientWallet = DB::table('wallets')
+                ->where('user_id', $recipient->id)
+                ->lockForUpdate()
+                ->first();
+            $senderWallet->withdraw($amount)->save();
+            $senderCurrencyCode = $senderWallet->currency_code;
+            $recipientCurrencyCode = $recipientWallet->currency_code;
+            $recipientAmount = $this->currencyService->convert($senderCurrencyCode, $recipientCurrencyCode, $amount);
+            $recipientWallet->deposit($recipientAmount)->save();
             $transfer = new Transfer;
             $transfer->sender()->associate($sender);
             $transfer->recipient()->associate($recipient);
